@@ -1,26 +1,16 @@
 package com.spring.management.Repository;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import com.spring.management.Entity.Vendor;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import com.spring.management.Entity.Vendor;
-
-import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface VendorRepository extends JpaRepository<Vendor, Long> {
 
-    // Custom JPA Query
-    List<Vendor> findByCategory(String category);
-
-    // JPQL Query
-    @Query("SELECT v FROM Vendor v WHERE LOWER(v.name) LIKE LOWER(CONCAT('%', :keyword, '%'))")
-    List<Vendor> searchByName(String keyword);
-
-    // Pagination and Sorting 
-    //Page<Vendor> findAll(Pageable pageable);
+    // Custom query to fetch a vendor with its associated tasks
+    @Query("SELECT v FROM Vendor v LEFT JOIN FETCH v.tasks WHERE v.id = :vendorId")
+    Optional<Vendor> findByIdWithTasks(Long vendorId);
 }
-

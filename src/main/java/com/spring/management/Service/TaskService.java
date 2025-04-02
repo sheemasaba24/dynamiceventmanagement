@@ -1,67 +1,59 @@
 package com.spring.management.Service;
 
+import com.spring.management.Entity.Task;
+import com.spring.management.Entity.Vendor;
+import com.spring.management.Repository.TaskRepository;
+import com.spring.management.Repository.VendorRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import com.spring.management.Repository.TaskRepository;
-import com.spring.management.Entity.Task;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class TaskService {
 
-    private final TaskRepository taskRepository;
+    @Autowired
+    private TaskRepository taskRepository;
 
     @Autowired
-    public TaskService(TaskRepository taskRepository) {
-        this.taskRepository = taskRepository;
-    }
+    private VendorRepository vendorRepository;
 
-   
-    public Task createTask(String taskName, String description, LocalDateTime dueDate) {
-        Task task = new Task(taskName, description, dueDate);
+    public Task createTask(Task task) {
         return taskRepository.save(task);
     }
 
-    //  pagination and sorting
-    public Page<Task> getAllTasks(int page, int size, String sortBy, String direction) {
-        Pageable pageable = PageRequest.of(page, size, direction.equalsIgnoreCase("desc") ? 
-  Pageable.unpaged().getSort().descending() : Pageable.unpaged().getSort().ascending());
+    @Transactional
+    public Task addVendorsToTask(Long taskId, List<Long> vendorIds) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Task not found"));
+        List<Vendor> vendors = vendorRepository.findAllById(vendorIds);
+        task.getVendors().addAll(vendors);
+        return taskRepository.save(task); // This will commit the changes
+    }
+
+    public Task getTaskWithVendors(Long taskId) {
+        return taskRepository.findByIdWithVendors(taskId).orElse(null);
+    }
+
+    public Page<Task> getAllTasks(Pageable pageable) {
         return taskRepository.findAll(pageable);
     }
 
-
-    public Optional<Task> getTaskById(Long id) {
-        return taskRepository.findById(id);
+    @Transactional
+    public Task updateTask(Long id, Task updatedTask) {
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Task not found"));
+        task.setTaskName(updatedTask.getTaskName());
+        task.setDescription(updatedTask.getDescription());
+        task.setDueDate(updatedTask.getDueDate());
+        task.setCompleted(updatedTask.isCompleted());
+        return taskRepository.save(task); // This will commit the changes
     }
 
-   
-    public Task updateTask(Long id, String taskName, String description, LocalDateTime dueDate, boolean isCompleted) {
-        Task task = taskRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Task not found"));
-        task.setTaskName(taskName);
-        task.setDescription(description);
-        task.setDueDate(dueDate);
-        task.setCompleted(isCompleted);
-        task.setUpdatedAt(LocalDateTime.now());
-        return taskRepository.save(task);
-    }
-
-    
     public void deleteTask(Long id) {
         taskRepository.deleteById(id);
     }
-
-    //  pagination
-    public Page<Task> findTasksByStatus(boolean isCompleted, int page, int size, String sortBy, String direction) {
-        Pageable pageable = PageRequest.of(page, size, direction.equalsIgnoreCase("desc") ? 
-       Pageable.unpaged().getSort().descending() : Pageable.unpaged().getSort().ascending());
-        return taskRepository.findByIsCompleted(isCompleted, pageable);
-    }
-
-    
 }

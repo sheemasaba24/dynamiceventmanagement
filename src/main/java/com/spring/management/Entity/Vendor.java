@@ -1,22 +1,31 @@
 package com.spring.management.Entity;
 
 import jakarta.persistence.*;
+import java.util.HashSet;
+import java.util.Set;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 public class Vendor {
-    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
     private String name;
     private String category;
     private String services;
     private Double pricing;
 
-    
-    public Vendor() {
-    }
+    @ManyToMany
+    @JoinTable(
+        name = "vendor_tasks",
+        joinColumns = @JoinColumn(name = "vendor_id"),
+        inverseJoinColumns = @JoinColumn(name = "task_id")
+    )
+    @JsonIgnoreProperties("vendors")
+    private Set<Task> tasks = new HashSet<>();
+
+    // Constructors
+    public Vendor() {}
 
     public Vendor(String name, String category, String services, Double pricing) {
         this.name = name;
@@ -25,7 +34,7 @@ public class Vendor {
         this.pricing = pricing;
     }
 
-    
+    // Getters and Setters
     public Long getId() {
         return id;
     }
@@ -64,5 +73,13 @@ public class Vendor {
 
     public void setPricing(Double pricing) {
         this.pricing = pricing;
+    }
+
+    public Set<Task> getTasks() {
+        return tasks;
+    }
+
+    public void setTasks(Set<Task> tasks) {
+        this.tasks = tasks;
     }
 }
